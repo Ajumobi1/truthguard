@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Home - TruthGuard{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">Upload an image or video to check</h1>
+<ul class="nav nav-tabs" id="tgTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="media-tab" data-bs-toggle="tab" data-bs-target="#media" type="button" role="tab">Media</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="text-tab" data-bs-toggle="tab" data-bs-target="#text" type="button" role="tab">Text</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="humanize-tab" data-bs-toggle="tab" data-bs-target="#humanize" type="button" role="tab">Humanize</button>
+    </li>
+</ul>
+<div class="tab-content mt-3">
+    <div class="tab-pane fade show active" id="media" role="tabpanel">
+        <form id="uploadForm" method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                        <input type="file" name="file" id="fileInput" accept="image/*,video/*" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Detect</button>
+        </form>
+        <div id="result" class="mt-4"></div>
+    </div>
+
+    <div class="tab-pane fade" id="text" role="tabpanel">
+        <form id="textDetectForm">
+            <div class="mb-3">
+                <textarea id="textInput" class="form-control" rows="6" placeholder="Paste text to analyze..."></textarea>
+            </div>
+            <button class="btn btn-secondary" id="textDetectBtn" type="submit">Detect AI Words</button>
+        </form>
+        <div id="textResult" class="mt-3"></div>
+    </div>
+
+    <div class="tab-pane fade" id="humanize" role="tabpanel">
+        <form id="humanizeForm">
+            <div class="mb-3">
+                <textarea id="humanizeInput" class="form-control" rows="6" placeholder="Paste text to humanize..."></textarea>
+            </div>
+            <button class="btn btn-success" id="humanizeBtn" type="submit">Humanize (free limit: 1000 words/day)</button>
+        </form>
+        <div id="humanizeResult" class="mt-3"></div>
+    </div>
+</div>
+
+<script>
+// Media upload
+document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData();
+        formData.append('file', document.getElementById('fileInput').files[0]);
+        const res = await fetch('{{ url_for('detect') }}', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.error) {
+                document.getElementById('result').innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+        } else {
+                document.getElementById('result').innerHTML = `<div class="alert alert-success">Result: <strong>${data.result}</strong> (Confidence: ${data.confidence})</div>`;
+        }
+});
+
+// Text detect
+document.getElementById('textDetectForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = document.getElementById('textInput').value;
+        const res = await fetch('{{ url_for('text_detect') }}', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text}) });
+        const data = await res.json();
+        if (data.error) {
+                document.getElementById('textResult').innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+        } else {
+                document.getElementById('textResult').innerHTML = `<div class="alert alert-info">Result: <strong>${data.result}</strong> (Confidence: ${data.confidence})</div>`;
+        }
+});
+
+// Humanize
+document.getElementById('humanizeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = document.getElementById('humanizeInput').value;
+        const res = await fetch('{{ url_for('text_humanize') }}', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text}) });
+        const data = await res.json();
+        if (data.error) {
+                document.getElementById('humanizeResult').innerHTML = `<div class="alert alert-warning">${data.error}</div>`;
+        } else {
+                document.getElementById('humanizeResult').innerHTML = `<div class="alert alert-success"><h5>Humanized (${data.words_used} words)</h5><p>${data.humanized}</p><p><small>Words remaining today: ${data.words_remaining}</small></p></div>`;
+        }
+});
+</script>
+{% endblock %}

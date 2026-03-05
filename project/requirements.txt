@@ -1,0 +1,12 @@
+flask==2.3.2
+gunicorn==21.2.0
+torch==2.1.0
+torchvision==0.15.2
+opencv-python==4.8.0.74
+Pillow==10.2.0
+numpy==1.26.2
+# optional for user auth / payments
+flask-login==0.6.3
+stripe==5.14.0
+# development
+python-dotenv==1.0.0
